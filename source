@@ -1,0 +1,258 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local TextService = game:GetService("TextService") -- for checking typing in chat
+
+
+local predefinedUsers = {
+	"Ja_viY2",
+	"Leotheminecraftboy",
+  "heyshawtyubad_wink",
+  "growagardennooby687",
+  "PIZZABOT_GO",
+  "catadam5000",
+  "yirker_146",
+  "bruh_urtoogood",
+  "FOLLOW0394xp",
+	
+}
+
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BlacklistUI"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 400, 0, 500)
+mainFrame.Position = UDim2.new(0.5, -200, 0.5, -250)
+mainFrame.BackgroundColor3 = Color3.fromRGB(38, 38, 38) -- dark grey
+mainFrame.BorderSizePixel = 0
+mainFrame.ClipsDescendants = true
+mainFrame.AnchorPoint = Vector2.new(0.5,0.5)
+mainFrame.Parent = screenGui
+mainFrame.Active = true
+mainFrame.Draggable = true
+
+
+local outline = Instance.new("UIStroke")
+outline.Thickness = 3
+outline.Color = Color3.fromRGB(0, 250, 0)
+outline.Parent = mainFrame
+
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0,20)
+corner.Parent = mainFrame
+
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1,0,0,45)
+title.Position = UDim2.new(0,0,0,0)
+title.BackgroundTransparency = 1
+title.Text = "Blacklist"
+title.TextScaled = true
+title.Font = Enum.Font.GothamBold
+title.TextColor3 = Color3.fromRGB(0, 204, 0)
+title.Parent = mainFrame
+
+
+local hideLabel = Instance.new("TextLabel")
+hideLabel.Size = UDim2.new(1,0,0,20)
+hideLabel.Position = UDim2.new(0,0,1,-25)
+hideLabel.BackgroundTransparency = 1
+hideLabel.Text = "Press 0 to hide"
+hideLabel.TextScaled = true
+hideLabel.Font = Enum.Font.Gotham
+hideLabel.TextColor3 = Color3.fromRGB(0,255,0)
+hideLabel.TextTransparency = 0.6
+hideLabel.Parent = mainFrame
+
+
+local inputBox = Instance.new("TextBox")
+inputBox.PlaceholderText = "Enter username..."
+inputBox.Size = UDim2.new(0.7,0,0,35)
+inputBox.Position = UDim2.new(0.05,0,0,90) -- moved down 20 pixels to avoid blocking Add button
+inputBox.BackgroundColor3 = Color3.fromRGB(60,60,60)
+inputBox.TextColor3 = Color3.fromRGB(0,255,0)
+inputBox.ClearTextOnFocus = true
+inputBox.TextScaled = true
+inputBox.Font = Enum.Font.Gotham
+inputBox.Parent = mainFrame
+
+local inputCorner = Instance.new("UICorner")
+inputCorner.CornerRadius = UDim.new(0,10)
+inputCorner.Parent = inputBox
+
+
+local addButton = Instance.new("TextButton")
+addButton.Size = UDim2.new(0.25,0,0,35)
+addButton.Position = UDim2.new(0.77,0,0,90) -- moved down 20 pixels to match input box
+addButton.BackgroundColor3 = Color3.fromRGB(0,255,0)
+addButton.TextColor3 = Color3.fromRGB(0,0,0)
+addButton.Text = "Add"
+addButton.TextScaled = true
+addButton.Font = Enum.Font.GothamBold
+addButton.Parent = mainFrame
+
+local buttonCorner = Instance.new("UICorner")
+buttonCorner.CornerRadius = UDim.new(0,10)
+buttonCorner.Parent = addButton
+
+
+local scrollFrame = Instance.new("ScrollingFrame")
+scrollFrame.Size = UDim2.new(0.9,0,0.65,0) -- moved down to make space for input/button
+scrollFrame.Position = UDim2.new(0.05,0,0.25,0)
+scrollFrame.BackgroundTransparency = 1
+scrollFrame.ScrollBarThickness = 6
+scrollFrame.CanvasSize = UDim2.new(0,0,0,0)
+scrollFrame.Parent = mainFrame
+
+local uiListLayout = Instance.new("UIListLayout")
+uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+uiListLayout.Padding = UDim.new(0,5)
+uiListLayout.Parent = scrollFrame
+
+
+local blacklist = {}
+
+
+local notifStack = {}
+
+local function notify(msg)
+	local notif = Instance.new("TextLabel")
+	notif.Size = UDim2.new(0.4,0,0,40)
+	notif.Position = UDim2.new(0.5,0,0.9 - (#notifStack*0.05),0)
+	notif.AnchorPoint = Vector2.new(0.5,1)
+	notif.BackgroundColor3 = Color3.fromRGB(0,255,0)
+	notif.BackgroundTransparency = 0
+	notif.TextColor3 = Color3.fromRGB(0,0,0)
+	notif.TextScaled = true
+	notif.Text = msg
+	notif.Font = Enum.Font.GothamBold
+	notif.Parent = screenGui
+
+	table.insert(notifStack, notif)
+
+	
+	for i, n in ipairs(notifStack) do
+		TweenService:Create(n, TweenInfo.new(0.5), {BackgroundTransparency = 0.1 + i*0.1, Position = UDim2.new(0.5,0,0.9 - (i-1)*0.05,0)}):Play()
+	end
+
+	delay(3, function()
+		TweenService:Create(notif, TweenInfo.new(1), {BackgroundTransparency = 1}):Play()
+		wait(1)
+		notif:Destroy()
+		table.remove(notifStack,1)
+		-- Adjust remaining notifications
+		for i, n in ipairs(notifStack) do
+			TweenService:Create(n, TweenInfo.new(0.5), {BackgroundTransparency = 0.1 + i*0.1, Position = UDim2.new(0.5,0,0.9 - (i-1)*0.05,0)}):Play()
+		end
+	end)
+end
+
+
+local function addToUI(name)
+	local frame = Instance.new("Frame")
+	frame.Size = UDim2.new(1,0,0,50)
+	frame.BackgroundColor3 = Color3.fromRGB(60,60,60)
+	frame.BorderSizePixel = 0
+	frame.Parent = scrollFrame
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0,10)
+	corner.Parent = frame
+
+	
+	local thumb = Instance.new("ImageLabel")
+	thumb.Size = UDim2.new(0,40,0,40)
+	thumb.Position = UDim2.new(0,5,0,5)
+	thumb.BackgroundTransparency = 1
+	thumb.Parent = frame
+	pcall(function()
+		local thumbUrl = Players:GetUserThumbnailAsync(Players:GetUserIdFromNameAsync(name), Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+		thumb.Image = thumbUrl
+	end)
+
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(0.65,0,1,0)
+	label.Position = UDim2.new(0.25,0,0,0)
+	label.BackgroundTransparency = 1
+	label.Text = name
+	label.TextScaled = true
+	label.TextColor3 = Color3.fromRGB(0,255,0)
+	label.Font = Enum.Font.GothamBold
+	label.Parent = frame
+
+	
+	local removeButton = Instance.new("TextButton")
+	removeButton.Size = UDim2.new(0.2,0,0.6,0)
+	removeButton.Position = UDim2.new(0.85,0,0.2,0)
+	removeButton.BackgroundColor3 = Color3.fromRGB(255,0,0)
+	removeButton.TextColor3 = Color3.fromRGB(255,255,255)
+	removeButton.Text = "X"
+	removeButton.Font = Enum.Font.GothamBold
+	removeButton.TextScaled = true
+	removeButton.Parent = frame
+
+	removeButton.MouseButton1Click:Connect(function()
+		frame:Destroy()
+		for i,nameInTable in ipairs(blacklist) do
+			if nameInTable == name then
+				table.remove(blacklist,i)
+				break
+			end
+		end
+		notify(name.." removed from blacklist!")
+		scrollFrame.CanvasSize = UDim2.new(0,0,0,uiListLayout.AbsoluteContentSize.Y)
+	end)
+
+	scrollFrame.CanvasSize = UDim2.new(0,0,0,uiListLayout.AbsoluteContentSize.Y)
+end
+
+
+local function addUser(name)
+	if name ~= "" then
+		local success, userId = pcall(function()
+			return Players:GetUserIdFromNameAsync(name)
+		end)
+		if success then
+			if not table.find(blacklist,name) then
+				table.insert(blacklist,name)
+				addToUI(name)
+				notify(name.." added to blacklist!")
+			else
+				notify(name.." already in blacklist!")
+			end
+		else
+			notify(name.." is not a valid player!")
+		end
+	end
+end
+
+
+for _, name in ipairs(predefinedUsers) do
+	addUser(name)
+end
+
+
+addButton.MouseButton1Click:Connect(function()
+	local name = inputBox.Text
+	addUser(name)
+	inputBox.Text = ""
+end)
+
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if not gameProcessed then
+		if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.Zero then
+			if not inputBox:IsFocused() then
+				mainFrame.Visible = not mainFrame.Visible
+			end
+		end
+	end
+end)
+
+print("loaded ok bye")
